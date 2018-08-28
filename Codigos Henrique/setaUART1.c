@@ -7,10 +7,17 @@
 
 int configUART1(){
 	struct termios cUART1;
+<<<<<<< HEAD
+	int UART1 = open("/dev/ttyUSB1",O_RDWR);
+	if(tcgetattr(UART1,&cUART1))printf("Erro tcgetattr");
+	cfmakeraw(&cUART1);
+	cfsetspeed(&cUART1,B9600);
+=======
 	int UART1 = open("/dev/ttyO0",O_RDWR);
 	if(tcgetattr(UART1,&cUART1))printf("Erro tcgetattr");
 	cfmakeraw(&cUART1);
 	cfsetspeed(&cUART1,B115200);
+>>>>>>> 80f98fc4bb8d1c1a609ddb499e04b465a4009083
 	cUART1.c_cflag &= ~CSTOPB;
 	cUART1.c_cc[VMIN] = 1;
 	cUART1.c_cc[VTIME] = 1;
@@ -38,4 +45,8 @@ int main(){
 	close(UART1);
 
 	return 0;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 80f98fc4bb8d1c1a609ddb499e04b465a4009083
