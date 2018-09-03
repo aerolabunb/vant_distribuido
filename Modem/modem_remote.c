@@ -8,7 +8,7 @@
 
 int configUART1(){
 	struct termios cUART1;
-	int UART1 = open("/dev/ttyUSB1",O_RDWR| O_NOCTTY | O_NONBLOCK);
+	int UART1 = open("/dev/ttyO1",O_RDWR| O_NOCTTY | O_NONBLOCK);
     //memset (&cUART1, 0, sizeof cUART1);
 	if(tcgetattr(UART1,&cUART1)!=0){
         printf("Erro %d from tcgetattr \n",(int)errno);
@@ -17,7 +17,7 @@ int configUART1(){
 	cfsetspeed(&cUART1,B115200);
 	cUART1.c_cflag &= ~CSTOPB;
 	cUART1.c_cc[VMIN] = 1;
-	cUART1.c_cc[VTIME] = 1;
+	cUART1.c_cc[VTIME] = 5;
 	if(tcsetattr(UART1,TCSAFLUSH,&cUART1)!= 0){
         printf("Erro from tcsetattr \n");
     }
@@ -38,14 +38,14 @@ int main(){
 	//testa UART
     while(1){
     printf("Buscando mensagens \n");
-	n = read(UART1,&out,5);
+	n = read(UART1,out,100);
     if(n<0){
-        printf("Erro durante leitura %d\n",(int)errno);
-   		}
+        printf("Erro durante leitura \n");
+    }
     else{
-		printf("Mensagem recebida: %s\n",out);
-    	printf("Numero de bytes lidos: %d \n \n",n);
-    	}
+	printf("Mensagem recebida: %s\n",out);
+    printf("Numero de bytes lidos: %d \n \n",n);
+    }
     sleep(1);
     }
 	close(UART1);
