@@ -80,7 +80,7 @@ void controle(union sigval arg){
     	int T;
 	T = time_gettime(&timestruct);
 	time_reset(&timestruct);
-    
+    printf("Thread controle \n");
     	T = time_gettime(&timestruct);
    	time_reset(&timestruct);
 
@@ -102,6 +102,10 @@ int main(){
         //gDataLogger_MatfileUpdate(&gDataLogger); // esvazia os buffers no arquivo de log
 	gDataLogger_Close(&gDataLogger);
 	timer_start ();
+    printf("Thread main \n");
+    while(1){
+        
+    }
 	time_reset(&timestruct);
 	timer_stop ();
 

@@ -75,7 +75,7 @@ top (int argc, char **argv)
 #endif
 	int baudrate = 57600;
 
-	// do the parse, will throw an int if it fails
+	// do the parse, will throw an int if it fails	
 	parse_commandline(argc, argv, uart_name, baudrate);
 
 
@@ -131,7 +131,6 @@ top (int argc, char **argv)
 	 */
 	serial_port.start();
 	autopilot_interface.start();
-
 
 	// --------------------------------------------------------------------------
 	//   RUN COMMANDS
@@ -277,8 +276,7 @@ commands(Autopilot_Interface &api)
 // throws EXIT_FAILURE if could not open the port
 void
 parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate)
-{
-
+{	
 	// string for command line usage
 	const char *commandline_usage = "usage: mavlink_serial -d <devicename> -b <baudrate>";
 

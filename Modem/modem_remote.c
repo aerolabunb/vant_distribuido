@@ -8,7 +8,7 @@
 
 int configUART1(){
 	struct termios cUART1;
-	int UART1 = open("/dev/ttyO1",O_RDWR| O_NOCTTY | O_NONBLOCK);
+	int UART1 = open("/dev/ttyUSB1",O_RDWR| O_NOCTTY | O_NONBLOCK);
     //memset (&cUART1, 0, sizeof cUART1);
 	if(tcgetattr(UART1,&cUART1)!=0){
         printf("Erro %d from tcgetattr \n",(int)errno);
