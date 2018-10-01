@@ -52,7 +52,8 @@ Autopilot_Interface *autopilot_interface_quit;
 Serial_Port *serial_port_quit;
 void quit_handler( int sig );
 
-
+char *global_uart_name = (char*)"/dev/ttyACM0";
+int global_baudrate = 57600;
 
 /*-------------------------------------------------------------
 TIMER FUNCTIONS
@@ -218,7 +219,7 @@ top ()
 	 * pthread mutex lock.
 	 *
 	 */
-	Serial_Port serial_port(uart_name, baudrate);
+	Serial_Port serial_port(global_uart_name, global_baudrate);
 
 
 	/*
