@@ -48,7 +48,7 @@ static timestruct_t timestruct_Pixhawk;
 static timestruct_t timestruct_Modem;
 
 /*-------------------------------------------------------------
-SERIAL AND AUTOPILOT
+SERIAL AND AUTOPILOT CONFIGURATIONS
 ---------------------------------------------------------------*/
 Autopilot_Interface *autopilot_interface_quit;
 Serial_Port *serial_port_quit;
@@ -188,70 +188,12 @@ quit_handler( int sig )
 
 
 // ------------------------------------------------------------------------------
-//   TOP
+//   PORT and THREAD STARTUP
 // ------------------------------------------------------------------------------
 int
 top ()
 {
 
-	// --------------------------------------------------------------------------
-	//   PARSE THE COMMANDS
-	// --------------------------------------------------------------------------
-
-	// Default input arguments
-#ifdef __APPLE__
-	char *uart_name = (char*)"/dev/tty.usbmodem1";
-#else
-	char *uart_name = (char*)"/dev/ttyUSB0";
-#endif
-	int baudrate = 57600;
-
-	// do the parse, will throw an int if it fails
-	parse_commandline(uart_name, baudrate);
-
-
-	// --------------------------------------------------------------------------
-	//   PORT and THREAD STARTUP
-	// --------------------------------------------------------------------------
-
-	/*
-	 * Instantiate a serial port object
-	 *
-	 * This object handles the opening and closing of the offboard computer's
-	 * serial port over which it will communicate to an autopilot.  It has
-	 * methods to read and write a mavlink_message_t object.  To help with read
-	 * and write in the context of pthreading, it gaurds port operations with a
-	 * pthread mutex lock.
-	 *
-	 */
-	//Serial_Port serial_port(global_uart_name, global_baudrate);
-
-
-	/*
-	 * Instantiate an autopilot interface object
-	 *
-	 * This starts two threads for read and write over MAVlink. The read thread
-	 * listens for any MAVlink message and pushes it to the current_messages
-	 * attribute.  The write thread at the moment only streams a position target
-	 * in the local NED frame (mavlink_set_position_target_local_ned_t), which
-	 * is changed by using the method update_setpoint().  Sending these messages
-	 * are only half the requirement to get response from the autopilot, a signal
-	 * to enter "offboard_control" mode is sent by using the enable_offboard_control()
-	 * method.  Signal the exit of this mode with disable_offboard_control().  It's
-	 * important that one way or another this program signals offboard mode exit,
-	 * otherwise the vehicle will go into failsafe.
-	 *
-	 */
-	//Autopilot_Interface autopilot_interface(&serial_port);
-
-	/*
-	 * Setup interrupt signal handler
-	 *
-	 * Responds to early exits signaled with Ctrl-C.  The handler will command
-	 * to exit offboard mode if required, and close threads and the port.
-	 * The handler in this example needs references to the above objects.
-	 *
-	 */
 	serial_port_quit         = &global_serial_port;
 	autopilot_interface_quit = &global_autopilot_interface;
 	signal(SIGINT,quit_handler);
@@ -263,11 +205,7 @@ top ()
 	global_serial_port.start();
 	global_autopilot_interface.start();
 
-	// --------------------------------------------------------------------------
-	//   DONE
-	// --------------------------------------------------------------------------
 
-	// woot!
 	return 0;
 
 }
