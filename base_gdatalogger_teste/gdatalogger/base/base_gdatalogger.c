@@ -48,7 +48,7 @@ static timestruct_t timestruct_Pixhawk;
 static timestruct_t timestruct_Modem;
 
 /*-------------------------------------------------------------
-SERIAL AND AUTOPILOT CONFIGURATIONS
+SERIAL AND AUTOPILOT CONFIGURATIONS (PIXHAWK)
 ---------------------------------------------------------------*/
 Autopilot_Interface *autopilot_interface_quit;
 Serial_Port *serial_port_quit;
