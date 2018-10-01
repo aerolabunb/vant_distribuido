@@ -228,9 +228,9 @@ int main(){
     //gDataLogger_MatfileUpdate(&gDataLogger); // esvazia os buffers no arquivo de log
 	
 //------------------------ Initialization -------------------------------------//    
-	timer_start_Pixhawk ();
-    timer_start_Modem ();
     Pixhawk_Init();
+    timer_start_Pixhawk ();
+    timer_start_Modem ();
     printf("Thread main iniciada \n");
 
 //----------------------- (Eternal) Loop ---------------------------------------//
