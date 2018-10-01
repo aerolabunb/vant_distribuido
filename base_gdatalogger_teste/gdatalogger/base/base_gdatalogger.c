@@ -140,7 +140,72 @@ PIXHAWK COMMUNICATION THREAD
 void comm_Pixhawk(union sigval arg){
 
     printf("Thread Pixhawk \n");
-    	// --------------------------------------------------------------------------
+    //commands(autopilot_interface);
+}
+
+
+/*-------------------------------------------------------------
+MODEM COMMUNICATION THREAD
+---------------------------------------------------------------*/
+void comm_Modem(union sigval arg){
+    
+    printf("Thread Modem \n");
+
+}
+
+// ------------------------------------------------------------------------------
+//   Quit Signal Handler
+// ------------------------------------------------------------------------------
+// this function is called when you press Ctrl-C
+void
+quit_handler( int sig )
+{
+	printf("\n");
+	printf("TERMINATING AT USER REQUEST\n");
+	printf("\n");
+
+	// autopilot interface
+	try {
+		autopilot_interface_quit->handle_quit(sig);
+	}
+	catch (int error){}
+
+	// serial port
+	try {
+		serial_port_quit->handle_quit(sig);
+	}
+	catch (int error){}
+
+	// end program here
+	exit(0);
+
+}
+
+
+// ------------------------------------------------------------------------------
+//   TOP
+// ------------------------------------------------------------------------------
+int
+top ()
+{
+
+	// --------------------------------------------------------------------------
+	//   PARSE THE COMMANDS
+	// --------------------------------------------------------------------------
+
+	// Default input arguments
+#ifdef __APPLE__
+	char *uart_name = (char*)"/dev/tty.usbmodem1";
+#else
+	char *uart_name = (char*)"/dev/ttyUSB0";
+#endif
+	int baudrate = 57600;
+
+	// do the parse, will throw an int if it fails
+	parse_commandline(uart_name, baudrate);
+
+
+	// --------------------------------------------------------------------------
 	//   PORT and THREAD STARTUP
 	// --------------------------------------------------------------------------
 
@@ -213,71 +278,6 @@ void comm_Pixhawk(union sigval arg){
 	 */
 	autopilot_interface.stop();
 	serial_port.stop();
-
-}
-
-
-/*-------------------------------------------------------------
-MODEM COMMUNICATION THREAD
----------------------------------------------------------------*/
-void comm_Modem(union sigval arg){
-    
-    printf("Thread Modem \n");
-
-}
-
-// ------------------------------------------------------------------------------
-//   Quit Signal Handler
-// ------------------------------------------------------------------------------
-// this function is called when you press Ctrl-C
-void
-quit_handler( int sig )
-{
-	printf("\n");
-	printf("TERMINATING AT USER REQUEST\n");
-	printf("\n");
-
-	// autopilot interface
-	try {
-		autopilot_interface_quit->handle_quit(sig);
-	}
-	catch (int error){}
-
-	// serial port
-	try {
-		serial_port_quit->handle_quit(sig);
-	}
-	catch (int error){}
-
-	// end program here
-	exit(0);
-
-}
-
-
-// ------------------------------------------------------------------------------
-//   TOP
-// ------------------------------------------------------------------------------
-int
-top ()
-{
-
-	// --------------------------------------------------------------------------
-	//   PARSE THE COMMANDS
-	// --------------------------------------------------------------------------
-
-	// Default input arguments
-#ifdef __APPLE__
-	char *uart_name = (char*)"/dev/tty.usbmodem1";
-#else
-	char *uart_name = (char*)"/dev/ttyUSB0";
-#endif
-	int baudrate = 57600;
-
-	// do the parse, will throw an int if it fails
-	parse_commandline(uart_name, baudrate);
-
-
 
 
 	// --------------------------------------------------------------------------
