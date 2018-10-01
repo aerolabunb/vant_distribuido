@@ -57,6 +57,9 @@ void quit_handler( int sig );
 char *global_uart_name = (char*)"/dev/ttyACM0";
 int global_baudrate = 57600;
 
+Serial_Port global_serial_port(global_uart_name, global_baudrate);
+Autopilot_Interface global_autopilot_interface(&global_serial_port);
+
 /*-------------------------------------------------------------
 TIMER FUNCTIONS
 ---------------------------------------------------------------*/
@@ -221,7 +224,7 @@ top ()
 	 * pthread mutex lock.
 	 *
 	 */
-	Serial_Port serial_port(global_uart_name, global_baudrate);
+	//Serial_Port serial_port(global_uart_name, global_baudrate);
 
 
 	/*
@@ -239,7 +242,7 @@ top ()
 	 * otherwise the vehicle will go into failsafe.
 	 *
 	 */
-	Autopilot_Interface autopilot_interface(&serial_port);
+	//Autopilot_Interface autopilot_interface(&serial_port);
 
 	/*
 	 * Setup interrupt signal handler
@@ -249,16 +252,16 @@ top ()
 	 * The handler in this example needs references to the above objects.
 	 *
 	 */
-	serial_port_quit         = &serial_port;
-	autopilot_interface_quit = &autopilot_interface;
+	serial_port_quit         = &global_serial_port;
+	autopilot_interface_quit = &global_autopilot_interface;
 	signal(SIGINT,quit_handler);
 
 	/*
 	 * Start the port and autopilot_interface
 	 * This is where the port is opened, and read and write threads are started.
 	 */
-	serial_port.start();
-	autopilot_interface.start();
+	global_serial_port.start();
+	global_autopilot_interface.start();
 
 
 	// --------------------------------------------------------------------------
@@ -268,7 +271,7 @@ top ()
 	/*
 	 * Now we can implement the algorithm we want on top of the autopilot interface
 	 */
-	commands(autopilot_interface);
+	commands(global_autopilot_interface);
 
 
 	// --------------------------------------------------------------------------
@@ -278,8 +281,8 @@ top ()
 	/*
 	 * Now that we are done we can stop the threads and close the port
 	 */
-	autopilot_interface.stop();
-	serial_port.stop();
+	global_autopilot_interface.stop();
+	global_serial_port.stop();
 
 
 	// --------------------------------------------------------------------------
