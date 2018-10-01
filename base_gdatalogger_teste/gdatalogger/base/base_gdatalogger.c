@@ -169,11 +169,14 @@ int main(){
 	gDataLogger_InsertVariable(&gDataLogger,(char*) "T",&t);
     //gDataLogger_MatfileUpdate(&gDataLogger); // esvazia os buffers no arquivo de log
 	
+//------------------------ Initialization -------------------------------------//    
 	timer_start_Pixhawk ();
     timer_start_Modem ();
+    Pixhawk_Init();
     printf("Thread main iniciada \n");
+
+//----------------------- (Eternal) Loop ---------------------------------------//
     while(1){
-        Pixhawk_Init();
         //init_Autopilot();
         gDataLogger_IPCUpdate(&gDataLogger); // gerencia IPC
     }
