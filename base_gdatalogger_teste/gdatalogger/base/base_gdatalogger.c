@@ -19,6 +19,8 @@
 #include "../gmatlabdatafile.h"
 #include "../gdatalogger.h"
 #include "mavlink/mavlink_control.h"
+#include "mavlink/serial_port.h"
+#include "mavlink/autopilot_interface.h"
 #include <stdio.h>
 
 #define TASK_PERIOD_US                  200000
