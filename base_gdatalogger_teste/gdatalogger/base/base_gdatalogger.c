@@ -145,7 +145,7 @@ PIXHAWK COMMUNICATION THREAD
 void comm_Pixhawk(union sigval arg){
 
     printf("Thread Pixhawk \n");
-    //commands(autopilot_interface);
+    commands(global_autopilot_interface);
 }
 
 
@@ -262,20 +262,6 @@ top ()
 	 */
 	global_serial_port.start();
 	global_autopilot_interface.start();
-
-
-	// --------------------------------------------------------------------------
-	//   RUN COMMANDS
-	// --------------------------------------------------------------------------
-
-	/*
-	 * Now we can implement the algorithm we want on top of the autopilot interface
-	 */
-	commands(global_autopilot_interface);
-
-
-	
-
 
 	// --------------------------------------------------------------------------
 	//   DONE
