@@ -274,15 +274,7 @@ top ()
 	commands(global_autopilot_interface);
 
 
-	// --------------------------------------------------------------------------
-	//   THREAD and PORT SHUTDOWN
-	// --------------------------------------------------------------------------
-
-	/*
-	 * Now that we are done we can stop the threads and close the port
-	 */
-	global_autopilot_interface.stop();
-	global_serial_port.stop();
+	
 
 
 	// --------------------------------------------------------------------------
@@ -327,6 +319,16 @@ int main(){
     gDataLogger_Close(&gDataLogger);
 	timer_stop_Pixhawk ();
     timer_stop_Modem ();
+
+    // --------------------------------------------------------------------------
+	//   THREAD and PORT SHUTDOWN
+	// --------------------------------------------------------------------------
+
+	/*
+	 * Now that we are done we can stop the threads and close the port
+	 */
+	global_autopilot_interface.stop();
+	global_serial_port.stop();
 
 return 0;
 }
