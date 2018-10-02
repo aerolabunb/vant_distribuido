@@ -143,12 +143,12 @@ commands(Autopilot_Interface &api)
 
 	// local position in ned frame
 	mavlink_local_position_ned_t pos = messages.local_position_ned;
-	printf("Got message LOCAL_POSITION_NED (spec: https://pixhawk.ethz.ch/mavlink/#LOCAL_POSITION_NED)\n");
+	printf("Got message LOCAL_POSITION_NED \n"); //(spec: https://pixhawk.ethz.ch/mavlink/#LOCAL_POSITION_NED)
 	printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
 
 	// hires imu
 	mavlink_highres_imu_t imu = messages.highres_imu;
-	printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
+	printf("Got message HIGHRES_IMU \n"); //(spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)
 	printf("    ap time:     %llu \n", imu.time_usec);
 	printf("    acc  (NED):  % f % f % f (m/s^2)\n", imu.xacc , imu.yacc , imu.zacc );
 	printf("    gyro (NED):  % f % f % f (rad/s)\n", imu.xgyro, imu.ygyro, imu.zgyro);
