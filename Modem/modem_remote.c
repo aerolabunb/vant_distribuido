@@ -37,14 +37,14 @@ int main(){
 
 	//testa UART
     while(1){
-    printf("Buscando mensagens \n");
-	n = read(UART1,out,100);
-    if(n<0){
-        printf("Erro durante leitura \n");
-    }
+    	printf("Buscando mensagens \n");
+		n = read(UART1,out,100);
+    	if(n<0){
+        	printf("Erro durante leitura \n");
+    	}
     else{
-	printf("Mensagem recebida: %s\n",out);
-    printf("Numero de bytes lidos: %d \n \n",n);
+		printf("Mensagem recebida: %s\n",out);
+    	printf("Numero de bytes lidos: %d \n \n",n);
     }
     sleep(1);
     }
