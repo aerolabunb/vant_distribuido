@@ -26,11 +26,19 @@
 #define MODEM_TASK_PERIOD_US            200000      // sample period of Modem read/write thread (us)
 #define PI                              3.14159265
 #define MODEM_READ_ENABLE               0
-#define MODEM_WRITE_ENABLE              1
+#define MODEM_WRITE_ENABLE              0
 #define PIXHAWK_READ_ENABLE             1
-#define PIXHAWK_WRITE_ENABLE            0
+#define PIXHAWK_WRITE_ENABLE            1
 
 GDATALOGGER gDataLogger;
+
+/*-------------------------------------------------------------
+GLOBAL VARIABLES
+---------------------------------------------------------------*/
+double roll, pitch, yaw;
+double roll_speed, pitch_speed, yaw_speed;
+double global_lat, global_lon, global_alt;
+
 
 /*-------------------------------------------------------------
 TIMER VARIABLES
@@ -60,12 +68,15 @@ Autopilot_Interface *autopilot_interface_quit;
 Serial_Port *serial_port_quit;
 void quit_handler( int sig );
 
-char *Pixhawk_uart_name = (char*)"/dev/ttyACM1";
+char *Pixhawk_uart_name = (char*)"/dev/ttyACM0";
 int Pixhawk_baudrate = 115200; //57600;
+
 mavlink_highres_imu_t global_imu;
 mavlink_local_position_ned_t global_pos;
 mavlink_attitude_t global_attitude;
 mavlink_global_position_int_t global_global_position;
+mavlink_gps_status_t global_gps_status;
+mavlink_set_position_target_local_ned_t global_sp;
 
 /*-------------------------------------------------------------
 MODEM CONFIGURATIONS
@@ -160,15 +171,12 @@ void timer_stop_Modem (void)
 void
 commands(Autopilot_Interface &api, Mavlink_Messages &messages)
 {
-	//printf("READ SOME MESSAGES \n");
-
 	// copy current messages
 	messages = api.current_messages;
 
 	// local position in ned frame
 	mavlink_local_position_ned_t pos = messages.local_position_ned;
 	global_pos = pos;
-
 
 	// hires imu
 	mavlink_highres_imu_t imu = messages.highres_imu;
@@ -180,6 +188,12 @@ commands(Autopilot_Interface &api, Mavlink_Messages &messages)
     mavlink_global_position_int_t global_position = messages.global_position_int;
     global_global_position = global_position;
 
+    mavlink_gps_status_t gps_status = messages.gps_status;
+    global_gps_status = gps_status;
+
+    #if PIXHAWK_WRITE_ENABLE
+    api.update_setpoint(global_sp);
+    #endif
 	return;
 
 }
@@ -190,31 +204,88 @@ PIXHAWK COMMUNICATION THREAD
 void comm_Pixhawk(union sigval arg){
 
     printf("Thread Pixhawk \n");
-	/*printf("Got message LOCAL_POSITION_NED (spec: https://pixhawk.ethz.ch/mavlink/#LOCAL_POSITION_NED)\n");
-	printf("    pos  (NED):  %f %f %f (m)\n", global_pos.x, global_pos.y, global_pos.z );
 
-	printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
-	printf("    ap time:     %llu \n", global_imu.time_usec);
-	printf("    acc  (NED):  % f % f % f (m/s^2)\n", global_imu.xacc , global_imu.yacc , global_imu.zacc );
-	printf("    gyro (NED):  % f % f % f (rad/s)\n", global_imu.xgyro, global_imu.ygyro, global_imu.zgyro);
-	printf("    mag  (NED):  % f % f % f (Ga)\n"   , global_imu.xmag , global_imu.ymag , global_imu.zmag );
-	printf("    baro:        %f (mBar) \n"  , global_imu.abs_pressure);
-	printf("    altitude:    %f (m) \n"     , global_imu.pressure_alt);
-	printf("    temperature: %f C \n"       , global_imu.temperature );*/
+    #if PIXHAWK_READ_ENABLE
 
-    printf("Roll Pitch Yaw Angles : %f  %f  %f (degree) \n", global_attitude.roll*180/PI, global_attitude.pitch*180/PI, global_attitude.yaw*180/PI);
-    printf("Roll Pitch Yaw Speeds : %f  %f  %f (degree/s) \n", global_attitude.rollspeed*180/PI, global_attitude.pitchspeed*180/PI, global_attitude.yawspeed*180/PI);
-    printf("Latitude Longitude Altitude  : %d  %d  %d \n", global_global_position.lat, global_global_position.lon, global_global_position.alt);
-    printf("Latitude Longitude Altitude Speeds  : %d  %d  %d \n", global_global_position.vx, global_global_position.vy, global_global_position.vz);
-    double pitch = (double)global_attitude.roll;
-    double roll = (double)global_attitude.roll;
-    double yaw = (double)global_attitude.yaw;
+    roll = (double)global_attitude.roll*180/PI;
+    pitch = (double)global_attitude.pitch*180/PI;
+    yaw = (double)global_attitude.yaw*180/PI;
+
+    roll_speed = (double)global_attitude.rollspeed*180/PI;
+    pitch_speed = (double)global_attitude.pitchspeed*180/PI;
+    yaw_speed = (double)global_attitude.yawspeed*180/PI;
+
+    global_lat = (double)global_global_position.lat*0.0000001;
+    global_lon = (double)global_global_position.lon*0.0000001;
+    global_alt = (double)global_global_position.alt*0.001;
+
+    printf("Roll Pitch Yaw Angles : %f  %f  %f (degree) \n", roll, pitch, yaw);
+    printf("Roll Pitch Yaw Speeds : %f  %f  %f (degree/s) \n", roll_speed, pitch_speed, yaw_speed);
+    printf("Latitude Longitude Altitude  : %d  %d  %d \n", global_lat, global_lon, global_alt);
+    //printf("Latitude Longitude Altitude Speeds  : %d  %d  %d \n", global_global_position.vx, global_global_position.vy, global_global_position.vz);
 
     gDataLogger_InsertVariable(&gDataLogger,(char*) "pitch",&pitch);
     gDataLogger_InsertVariable(&gDataLogger,(char*) "roll",&roll);
     gDataLogger_InsertVariable(&gDataLogger,(char*) "yaw",&yaw);
 
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "pitch_speed",&pitch_speed);
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "roll_speed",&roll_speed);
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "yaw_speed",&yaw_speed);
+
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "latitude",&global_lat);
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "longitude",&global_lon);
+    gDataLogger_InsertVariable(&gDataLogger,(char*) "altitude",&global_alt);
+
 	printf("\n");
+    #endif
+
+    #if PIXHAWK_WRITE_ENABLE
+    // Insert here the command protocol
+
+	usleep(100); // give some time to let it sink in
+
+	// now the autopilot is accepting setpoint commands
+	printf("SEND OFFBOARD COMMANDS\n");
+
+	// initialize command data strtuctures
+	//mavlink_set_position_target_local_ned_t sp;
+	//mavlink_set_position_target_local_ned_t ip = api.initial_position;
+
+	// autopilot_interface.h provides some helper functions to build the command
+
+
+	// Example 1 - Set Velocity
+	set_velocity(  1.0       , // [m/s]
+				   0.0       , // [m/s]
+				   0.0       , // [m/s]
+				   global_sp        );
+
+	// Example 2 - Set Position
+//	 set_position( ip.x - 5.0 , // [m]
+//			 	   ip.y - 5.0 , // [m]
+//				   ip.z       , // [m]
+//				   sp         );
+
+
+	// Example 1.2 - Append Yaw Command
+	//set_yaw( ip.yaw , // [rad]
+	//		 sp     );
+
+	// SEND THE COMMAND
+	// NOW pixhawk will try to move
+
+	// Wait for 8 seconds, check position
+	for (int i=0; i < 8; i++)
+	{
+		//mavlink_local_position_ned_t pos = api.current_messages.local_position_ned;
+		//printf("%i CURRENT POSITION XYZ = [ % .4f , % .4f , % .4f ] \n", i, pos.x, pos.y, pos.z);
+		sleep(1);
+	}
+
+	printf("\n");
+
+    #endif
+
     global_counter++;
 }
 
@@ -326,11 +397,17 @@ int main(){
     gDataLogger_DeclareVariable(&gDataLogger,(char*) "pitch",(char*) "deg",1,1,1000);
     gDataLogger_DeclareVariable(&gDataLogger,(char*) "roll",(char*) "deg",1,1,1000);
     gDataLogger_DeclareVariable(&gDataLogger,(char*) "yaw",(char*) "deg",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "pitch_speed",(char*) "deg/s",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "roll_speed",(char*) "deg/s",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "yaw_speed",(char*) "deg/s",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "latitude",(char*) "deg",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "longitude",(char*) "deg",1,1,1000);
+    gDataLogger_DeclareVariable(&gDataLogger,(char*) "altitude",(char*) "m",1,1,1000);
 	gDataLogger_InsertVariable(&gDataLogger,(char*) "T",&t);
     //gDataLogger_MatfileUpdate(&gDataLogger); // esvazia os buffers no arquivo de log
 	
 //------------------------ Pixhawk Initialization -------------------------------------//
-
+    #if PIXHAWK_WRITE_ENABLE || PIXHAWK_READ_ENABLE
 	Serial_Port serial_port(Pixhawk_uart_name, Pixhawk_baudrate);
 	Autopilot_Interface autopilot_interface(&serial_port);
 
@@ -343,18 +420,26 @@ int main(){
 	autopilot_interface.start();
 
 	commands(autopilot_interface, messages);
+    timer_start_Pixhawk ();
+    global_counter = 0;
+    #else
+    global_counter = 101;
+    #endif
+
+    #if PIXHAWK_WRITE_ENABLE
+	autopilot_interface.enable_offboard_control();
+    #endif
 
 //------------------------ Modem Initialization --------------------------------//
+    #if MODEM_WRITE_ENABLE || MODEM_READ_ENABLE
     Modem_uart_port = Modem_config();
     if(Modem_uart_port>0){printf("Modem Conectado com Sucesso \n");}
-
-
-    timer_start_Pixhawk ();
     timer_start_Modem ();
-    global_counter = 0;
-//----------------------- (Eternal) Loop ---------------------------------------//
-    while(global_counter<20){               // Definir posteriormente a condicao de parada
-		commands(autopilot_interface, messages);        // Atualiza a leitura das variáveis da Pixhawk
+    #endif
+
+//-----------------------  Loop ---------------------------------------//
+    while(global_counter<100){               // Definir posteriormente a condicao de parada
+		commands(autopilot_interface, messages);        // Atualiza a leitura e escrita das variáveis da Pixhawk
         gDataLogger_IPCUpdate(&gDataLogger); // gerencia IPC
     }
 
@@ -366,6 +451,10 @@ int main(){
 	timer_stop_Pixhawk ();
     timer_stop_Modem ();
     close(Modem_uart_port);
+
+    #if PIXHAWK_WRITE_ENABLE
+	autopilot_interface.disable_offboard_control();
+    #endif
 
 	autopilot_interface.stop();
 	serial_port.stop();
