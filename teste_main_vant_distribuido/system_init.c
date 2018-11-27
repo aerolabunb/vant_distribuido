@@ -7,7 +7,7 @@ int open_port(const char* port){
 
     if (port_number < 0)
 	{
-		printf("Fail in open port");
+		printf("Failure in open port \n");
 		return port_number;
 	}
 
@@ -163,7 +163,7 @@ bool setup_port(int port_number, int baud, int data_bits, int stop_bits, bool pa
 int Pixhawk_init(const char* Pixhawk_uart_name, int Pixhawk_baudrate){
     int Pixhawk_port_number = open_port(Pixhawk_uart_name);
     if (Pixhawk_port_number < 0){
-        return 0;
+        return Pixhawk_port_number;
     }
     else{
     bool success = setup_port(Pixhawk_port_number, Pixhawk_baudrate, 8, 1, false, false);

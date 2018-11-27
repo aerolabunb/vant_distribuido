@@ -6,7 +6,7 @@ CC = g++
 LIBS =  -lpthread -lrt -lm
 INCLUDES =
 OBJS =  ${TARGET}.o
-SRCS =  ${TARGET}.c gdatalogger/gdatalogger.c gdatalogger/gmatlabdatafile.c  gdatalogger/gqueue.c system_init.c
+SRCS =  ${TARGET}.c gdatalogger/gdatalogger.c gdatalogger/gmatlabdatafile.c  gdatalogger/gqueue.c system_init.c commands.c
 HDRS =  
 
 clean:

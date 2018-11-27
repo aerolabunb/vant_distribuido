@@ -19,6 +19,7 @@
 #include "gdatalogger/gmatlabdatafile.h"
 #include "gdatalogger/gdatalogger.h"
 #include "system_init.h"
+#include "commands.h"
 
 /*-------------------------------------------------------------
 GLOBAL VARIABLES
@@ -29,6 +30,8 @@ double global_lat, global_lon, global_alt;
 
 int System_id;
 int Pixhawk_comp_id;
+
+int flag_offboard_control = 0;
 
 uint64_t get_time_usec(){
 	static struct timeval _time_stamp;
@@ -48,11 +51,13 @@ int Pixhawk_read(int fd){
     uint64_t time_global_position_int = 0;
 	uint64_t time_attitude = 0;
     uint64_t time_parameter = 0;
+    uint64_t time_command_ack = 0;
 
     mavlink_heartbeat_t heartbeat;
     mavlink_global_position_int_t global_position_int;
    	mavlink_attitude_t attitude;
     mavlink_param_value_t parameter;
+    mavlink_command_ack_t command_ack;
 
 
     while (!received_all)
@@ -113,6 +118,15 @@ int Pixhawk_read(int fd){
                         break;
                     }
 
+                    case MAVLINK_MSG_ID_COMMAND_ACK:
+                    {
+                        //printf("MAVLINK_MSG_ID_ATTITUDE\n");
+                        mavlink_msg_command_ack_decode(&message, &command_ack);
+                        time_command_ack = get_time_usec();
+                        //this_timestamps.attitude = current_messages.time_stamps.attitude;
+                        break;
+                    }
+
                     default:
                     {
                         // printf("Warning, did not handle message id %i\n",message.msgid);
@@ -122,7 +136,7 @@ int Pixhawk_read(int fd){
 
                 } // end: switch msgid
 
-                received_all = time_heartbeat && time_global_position_int && time_attitude && time_parameter;
+                received_all = time_heartbeat && time_global_position_int && time_attitude; // && time_parameter;
 
     }
 
@@ -139,7 +153,10 @@ int Pixhawk_read(int fd){
     global_lon = (double)global_position_int.lon*0.0000001;
     global_alt = (double)global_position_int.alt*0.001;
     
-    printf("Parameter char %s is %f \n",parameter.param_id, parameter.param_value);
+    //printf("Parameter char %s is %f \n",parameter.param_id, parameter.param_value);
+    //printf("Mav Type %d \n Mav Autopilot %d \n Mav Mode Flag %d \n Mav State %d \n",heartbeat.type,heartbeat.autopilot,heartbeat.base_mode,heartbeat.system_status);
+    printf("Command %d was acknowledged with result %d \n",command_ack.command, command_ack.result);
+    flag_offboard_control = command_ack.result;
 
     return 0;
 }
@@ -147,107 +164,51 @@ int Pixhawk_read(int fd){
 int Pixhawk_write(int fd){
     mavlink_message_t message;
     char buf[300];
-    char get;
 
-    mavlink_rc_channels_override_t rc;
-    mavlink_set_position_target_global_int_t target;
-    mavlink_attitude_t attitude_set;
-    mavlink_param_request_read_t parameters;
-    mavlink_param_set_t parameter_set;
-
-    /*rc.chan3_raw = 1600;
-    rc.target_system = 1;
-    rc.target_component;
-
-    rc.chan1_raw = 0;
-    rc.chan2_raw = 0;
-    rc.chan4_raw = 0;
-    rc.chan5_raw = 0;
-    rc.chan6_raw = 0;
-    rc.chan7_raw = 0;
-    rc.chan8_raw = 0;
-    rc.chan9_raw = 0;
-    rc.chan10_raw = 0;
-    rc.chan11_raw = 0;
-    rc.chan12_raw = 0;
-    rc.chan13_raw = 0;
-    rc.chan14_raw = 0;
-    rc.chan15_raw = 0;
-    rc.chan16_raw = 0;
-    rc.chan17_raw = 0;
-
-    mavlink_msg_rc_channels_override_encode(1, 2, &message, &rc);
-    
-    target.vx = 10;
-    target.vy = 0;
-    target.vz = 0;
-    target.target_system = 1;
-    target.target_component = 1;
-    target.coordinate_frame = MAV_FRAME_GLOBAL_INT;*/
-
-    //mavlink_msg_set_position_target_global_int_encode(1, 1, &message, &target);
-
-    /*attitude_set.roll = 0;
-    attitude_set.pitch = 0;
-    attitude_set.yaw = 0;
-
-    mavlink_msg_attitude_encode(1, 1, &message, &attitude_set);*/
-
-    parameters.target_system = 2;
-    parameters.target_component = 1;
-    parameters.param_index = -1;
-    strncpy(parameters.param_id, "SYSID_THISMAV", sizeof(parameters.param_id));
-
-    mavlink_msg_param_request_read_encode(1, 1, &message, &parameters);
-
+    enable_offboard_control(&message);
+    //set_parameter(&message);
+    // --------------------- Message Write ------------------------- //
     unsigned len = mavlink_msg_to_send_buffer((uint8_t*)buf, &message);
 
     const int bytesWritten = write(fd, buf, len);
 
-
-    /*parameter_set.target_system = 2;
-    parameter_set.target_component = 1;
-    strncpy(parameter_set.param_id, "SYSID_THISMAV", sizeof(parameters.param_id));
-    parameter_set.param_value = 1;
-
-    mavlink_msg_param_set_encode(1, 1, &message, &parameter_set);
-
-    unsigned len2 = mavlink_msg_to_send_buffer((uint8_t*)buf, &message);
-
-    const int bytesWritten2 = write(fd, buf, len2);*/
-
-
-
 }
 
 main(){
-    char *Pixhawk_uart_name = "/dev/ttyACM1";
+    char *Pixhawk_uart_name = "/dev/ttyACM3";
     int Pixhawk_baudrate = 57600;
 
     int Pixhawk_port_number = Pixhawk_init(Pixhawk_uart_name,Pixhawk_baudrate);
+    if(Pixhawk_port_number < 0){return 0;}
 
-    Pixhawk_write(Pixhawk_port_number);
     Pixhawk_read(Pixhawk_port_number);
+    printf("This is system %d with Pixhawk component number %d \n", System_id, Pixhawk_comp_id);
 
-    printf("This is sytem %d with Pixhawk component number %d \n", System_id, Pixhawk_comp_id);
+    while (flag_offboard_control != 1){
+        Pixhawk_write(Pixhawk_port_number);
+        Pixhawk_read(Pixhawk_port_number);
+    }
+
+    printf("Offboard Control Enabled Successfully \n");
     printf("Pressione qualquer tecla para iniciar \n");
     getch();
 
     
 
-    while(1){
+    while(!kbhit()){
 
     Pixhawk_write(Pixhawk_port_number);
+    usleep(50000);
 
     Pixhawk_read(Pixhawk_port_number);
     printf("Roll Pitch Yaw Angles : %f  %f  %f (degree) \n", roll, pitch, yaw);
     printf("Roll Pitch Yaw Speeds : %f  %f  %f (degree/s) \n", roll_speed, pitch_speed, yaw_speed);
-    printf("Latitude Longitude Altitude  : %d  %d  %d \n \n", global_lat, global_lon, global_alt);
+    printf("Latitude Longitude Altitude  : %f  %f  %f \n \n", global_lat, global_lon, global_alt);
 
-    usleep(100000);
+    usleep(50000);
     }
 
-    
+    close(Pixhawk_port_number);
 
     return 0;
 }
